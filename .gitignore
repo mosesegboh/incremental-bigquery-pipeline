@@ -1,0 +1,15 @@
+.venv/
+__pycache__/
+.pytest_cache/
+*.py[cod]
+main/processing/
+.env
+.env.*
+!.env.example
+application_default_credentials.json
+service-account*.json
+*credentials*.json
+*secret*.json
+.idea/
+.DS_Store
+test-results/
