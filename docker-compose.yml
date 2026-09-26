@@ -1,0 +1,7 @@
+services:
+  pipeline:
+    build: .
+    working_dir: /app
+    command: make run-fast
+    volumes:
+      - .:/app
