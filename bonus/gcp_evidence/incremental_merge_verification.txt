@@ -1,0 +1,498 @@
+CREATE TEMP TABLE raw AS SELECT * FROM `de-test-project-moses.de_test_dataset.playertransactions_raw` WHERE FALSE; -- at [4:1]
+Created de-test-project-moses._script68b614421ed2bb305c15851d78f54889236c52e2.raw
+
+CREATE TEMP TABLE curated AS SELECT * FROM `de-test-project-moses.de_test_dataset.playertransactions` WHERE FALSE; -- at [5:1]
+Created de-test-project-moses._script68b614421ed2bb305c15851d78f54889236c52e2.curated
+
+INSERT INTO raw VALUES (
+  1, 100, TIMESTAMP '2026-03-01 00:00:00+00', NULL, NUMERIC '10',
+  'deposit', 'waiting', 'VISA', NULL, 'GB', 1, 1,
+  TIMESTAMP '2026-03-01 00:00:01+00', TIMESTAMP '2026-05-18 16:10:00+00'
+); -- at [6:1]
+Number of affected rows: 1
+
+MERGE curated AS target
+USING (
+  SELECT
+    CODE,
+    PLAYERCODE,
+    REQUESTDATE,
+    ACCEPTDATE,
+    AMOUNT,
+    TYPE,
+    STATUS,
+    PAYMENTMETHOD,
+    PAYMENTSUBMETHOD,
+    COUNTRY,
+    CLIENTPARAMETERCODE,
+    FIRSTDEPOSIT,
+    LASTUPDATEDATE
+  FROM (
+    SELECT
+      raw.*,
+      ROW_NUMBER() OVER (
+        PARTITION BY CODE
+        ORDER BY LASTUPDATEDATE DESC, INGESTION_TIMESTAMP DESC
+      ) AS row_num
+    FROM raw AS raw
+    WHERE raw.INGESTION_TIMESTAMP >= interval_start
+      AND raw.INGESTION_TIMESTAMP < interval_end
+      -- An older replay must not undo a newer version already landed in raw.
+      AND NOT EXISTS (
+        SELECT 1
+        FROM raw AS newer
+        WHERE newer.CODE = raw.CODE
+          AND (
+            newer.LASTUPDATEDATE > raw.LASTUPDATEDATE
+            OR (newer.LASTUPDATEDATE = raw.LASTUPDATEDATE
+                AND newer.INGESTION_TIMESTAMP > raw.INGESTION_TIMESTAMP)
+          )
+      )
+  )
+  WHERE row_num = 1
+) AS source
+ON target.CODE = source.CODE
+WHEN MATCHED AND source.LASTUPDATEDATE >= target.LASTUPDATEDATE
+  AND (
+    source.STATUS IS DISTINCT FROM target.STATUS
+    OR source.AMOUNT IS DISTINCT FROM target.AMOUNT
+    OR source.ACCEPTDATE IS DISTINCT FROM target.ACCEPTDATE
+    OR source.LASTUPDATEDATE IS DISTINCT FROM target.LASTUPDATEDATE
+  ) THEN UPDATE SET
+  STATUS = source.STATUS,
+  AMOUNT = source.AMOUNT,
+  ACCEPTDATE = source.ACCEPTDATE,
+  LASTUPDATEDATE = source.LASTUPDATEDATE,
+  DWH_UPDATE_TIME = CURRENT_TIMESTAMP()
+WHEN NOT MATCHED THEN INSERT (
+  CODE,
+  PLAYERCODE,
+  REQUESTDATE,
+  ACCEPTDATE,
+  AMOUNT,
+  TYPE,
+  STATUS,
+  PAYMENTMETHOD,
+  PAYMENTSUBMETHOD,
+  COUNTRY,
+  CLIENTPARAMETERCODE,
+  FIRSTDEPOSIT,
+  LASTUPDATEDATE,
+  DWH_CREATE_TIME,
+  DWH_UPDATE_TIME
+) VALUES (
+  source.CODE,
+  source.PLAYERCODE,
+  source.REQUESTDATE,
+  source.ACCEPTDATE,
+  source.AMOUNT,
+  source.TYPE,
+  source.STATUS,
+  source.PAYMENTMETHOD,
+  source.PAYMENTSUBMETHOD,
+  source.COUNTRY,
+  source.CLIENTPARAMETERCODE,
+  source.FIRSTDEPOSIT,
+  source.LASTUPDATEDATE,
+  CURRENT_TIMESTAMP(),
+  CURRENT_TIMESTAMP()
+); -- at [11:1]
+Number of affected rows: 1
+
+ASSERT (SELECT COUNT(*) = 1 FROM curated) AS 'New transaction inserted'; -- at [98:1]
+Assertion successful
+CREATE TEMP TABLE before_replay AS SELECT * FROM curated; -- at [99:1]
+Created de-test-project-moses._script68b614421ed2bb305c15851d78f54889236c52e2.before_replay
+
+MERGE curated AS target
+USING (
+  SELECT
+    CODE,
+    PLAYERCODE,
+    REQUESTDATE,
+    ACCEPTDATE,
+    AMOUNT,
+    TYPE,
+    STATUS,
+    PAYMENTMETHOD,
+    PAYMENTSUBMETHOD,
+    COUNTRY,
+    CLIENTPARAMETERCODE,
+    FIRSTDEPOSIT,
+    LASTUPDATEDATE
+  FROM (
+    SELECT
+      raw.*,
+      ROW_NUMBER() OVER (
+        PARTITION BY CODE
+        ORDER BY LASTUPDATEDATE DESC, INGESTION_TIMESTAMP DESC
+      ) AS row_num
+    FROM raw AS raw
+    WHERE raw.INGESTION_TIMESTAMP >= interval_start
+      AND raw.INGESTION_TIMESTAMP < interval_end
+      -- An older replay must not undo a newer version already landed in raw.
+      AND NOT EXISTS (
+        SELECT 1
+        FROM raw AS newer
+        WHERE newer.CODE = raw.CODE
+          AND (
+            newer.LASTUPDATEDATE > raw.LASTUPDATEDATE
+            OR (newer.LASTUPDATEDATE = raw.LASTUPDATEDATE
+                AND newer.INGESTION_TIMESTAMP > raw.INGESTION_TIMESTAMP)
+          )
+      )
+  )
+  WHERE row_num = 1
+) AS source
+ON target.CODE = source.CODE
+WHEN MATCHED AND source.LASTUPDATEDATE >= target.LASTUPDATEDATE
+  AND (
+    source.STATUS IS DISTINCT FROM target.STATUS
+    OR source.AMOUNT IS DISTINCT FROM target.AMOUNT
+    OR source.ACCEPTDATE IS DISTINCT FROM target.ACCEPTDATE
+    OR source.LASTUPDATEDATE IS DISTINCT FROM target.LASTUPDATEDATE
+  ) THEN UPDATE SET
+  STATUS = source.STATUS,
+  AMOUNT = source.AMOUNT,
+  ACCEPTDATE = source.ACCEPTDATE,
+  LASTUPDATEDATE = source.LASTUPDATEDATE,
+  DWH_UPDATE_TIME = CURRENT_TIMESTAMP()
+WHEN NOT MATCHED THEN INSERT (
+  CODE,
+  PLAYERCODE,
+  REQUESTDATE,
+  ACCEPTDATE,
+  AMOUNT,
+  TYPE,
+  STATUS,
+  PAYMENTMETHOD,
+  PAYMENTSUBMETHOD,
+  COUNTRY,
+  CLIENTPARAMETERCODE,
+  FIRSTDEPOSIT,
+  LASTUPDATEDATE,
+  DWH_CREATE_TIME,
+  DWH_UPDATE_TIME
+) VALUES (
+  source.CODE,
+  source.PLAYERCODE,
+  source.REQUESTDATE,
+  source.ACCEPTDATE,
+  source.AMOUNT,
+  source.TYPE,
+  source.STATUS,
+  source.PAYMENTMETHOD,
+  source.PAYMENTSUBMETHOD,
+  source.COUNTRY,
+  source.CLIENTPARAMETERCODE,
+  source.FIRSTDEPOSIT,
+  source.LASTUPDATEDATE,
+  CURRENT_TIMESTAMP(),
+  CURRENT_TIMESTAMP()
+); -- at [100:1]
+Number of affected rows: 0
+
+ASSERT (SELECT TO_JSON_STRING(c) = TO_JSON_STRING(b) FROM curated c CROSS JOIN before_replay b)
+  AS 'Replay preserves all fields and audit timestamps'; -- at [187:1]
+Assertion successful
+INSERT INTO raw SELECT * REPLACE (
+  'approved' AS STATUS, NUMERIC '20' AS AMOUNT,
+  TIMESTAMP '2026-03-02 00:00:00+00' AS LASTUPDATEDATE,
+  TIMESTAMP '2026-05-18 17:10:00+00' AS INGESTION_TIMESTAMP
+) FROM raw; -- at [190:1]
+Number of affected rows: 1
+
+MERGE curated AS target
+USING (
+  SELECT
+    CODE,
+    PLAYERCODE,
+    REQUESTDATE,
+    ACCEPTDATE,
+    AMOUNT,
+    TYPE,
+    STATUS,
+    PAYMENTMETHOD,
+    PAYMENTSUBMETHOD,
+    COUNTRY,
+    CLIENTPARAMETERCODE,
+    FIRSTDEPOSIT,
+    LASTUPDATEDATE
+  FROM (
+    SELECT
+      raw.*,
+      ROW_NUMBER() OVER (
+        PARTITION BY CODE
+        ORDER BY LASTUPDATEDATE DESC, INGESTION_TIMESTAMP DESC
+      ) AS row_num
+    FROM raw AS raw
+    WHERE raw.INGESTION_TIMESTAMP >= interval_start
+      AND raw.INGESTION_TIMESTAMP < interval_end
+      -- An older replay must not undo a newer version already landed in raw.
+      AND NOT EXISTS (
+        SELECT 1
+        FROM raw AS newer
+        WHERE newer.CODE = raw.CODE
+          AND (
+            newer.LASTUPDATEDATE > raw.LASTUPDATEDATE
+            OR (newer.LASTUPDATEDATE = raw.LASTUPDATEDATE
+                AND newer.INGESTION_TIMESTAMP > raw.INGESTION_TIMESTAMP)
+          )
+      )
+  )
+  WHERE row_num = 1
+) AS source
+ON target.CODE = source.CODE
+WHEN MATCHED AND source.LASTUPDATEDATE >= target.LASTUPDATEDATE
+  AND (
+    source.STATUS IS DISTINCT FROM target.STATUS
+    OR source.AMOUNT IS DISTINCT FROM target.AMOUNT
+    OR source.ACCEPTDATE IS DISTINCT FROM target.ACCEPTDATE
+    OR source.LASTUPDATEDATE IS DISTINCT FROM target.LASTUPDATEDATE
+  ) THEN UPDATE SET
+  STATUS = source.STATUS,
+  AMOUNT = source.AMOUNT,
+  ACCEPTDATE = source.ACCEPTDATE,
+  LASTUPDATEDATE = source.LASTUPDATEDATE,
+  DWH_UPDATE_TIME = CURRENT_TIMESTAMP()
+WHEN NOT MATCHED THEN INSERT (
+  CODE,
+  PLAYERCODE,
+  REQUESTDATE,
+  ACCEPTDATE,
+  AMOUNT,
+  TYPE,
+  STATUS,
+  PAYMENTMETHOD,
+  PAYMENTSUBMETHOD,
+  COUNTRY,
+  CLIENTPARAMETERCODE,
+  FIRSTDEPOSIT,
+  LASTUPDATEDATE,
+  DWH_CREATE_TIME,
+  DWH_UPDATE_TIME
+) VALUES (
+  source.CODE,
+  source.PLAYERCODE,
+  source.REQUESTDATE,
+  source.ACCEPTDATE,
+  source.AMOUNT,
+  source.TYPE,
+  source.STATUS,
+  source.PAYMENTMETHOD,
+  source.PAYMENTSUBMETHOD,
+  source.COUNTRY,
+  source.CLIENTPARAMETERCODE,
+  source.FIRSTDEPOSIT,
+  source.LASTUPDATEDATE,
+  CURRENT_TIMESTAMP(),
+  CURRENT_TIMESTAMP()
+); -- at [197:1]
+Number of affected rows: 1
+
+ASSERT (SELECT STATUS = 'approved' AND AMOUNT = 20 FROM curated) AS 'New version updates fields'; -- at [284:1]
+Assertion successful
+ASSERT (SELECT c.DWH_CREATE_TIME = b.DWH_CREATE_TIME AND c.DWH_UPDATE_TIME > b.DWH_UPDATE_TIME
+        FROM curated c CROSS JOIN before_replay b) AS 'Creation retained; update time advanced'; -- at [285:1]
+Assertion successful
+CREATE TEMP TABLE after_update AS SELECT * FROM curated; -- at [287:1]
+Created de-test-project-moses._script68b614421ed2bb305c15851d78f54889236c52e2.after_update
+
+INSERT INTO raw SELECT * REPLACE (
+  'declined' AS STATUS, TIMESTAMP '2026-05-18 16:30:00+00' AS INGESTION_TIMESTAMP
+) FROM raw WHERE STATUS = 'approved'; -- at [290:1]
+Number of affected rows: 1
+
+MERGE curated AS target
+USING (
+  SELECT
+    CODE,
+    PLAYERCODE,
+    REQUESTDATE,
+    ACCEPTDATE,
+    AMOUNT,
+    TYPE,
+    STATUS,
+    PAYMENTMETHOD,
+    PAYMENTSUBMETHOD,
+    COUNTRY,
+    CLIENTPARAMETERCODE,
+    FIRSTDEPOSIT,
+    LASTUPDATEDATE
+  FROM (
+    SELECT
+      raw.*,
+      ROW_NUMBER() OVER (
+        PARTITION BY CODE
+        ORDER BY LASTUPDATEDATE DESC, INGESTION_TIMESTAMP DESC
+      ) AS row_num
+    FROM raw AS raw
+    WHERE raw.INGESTION_TIMESTAMP >= interval_start
+      AND raw.INGESTION_TIMESTAMP < interval_end
+      -- An older replay must not undo a newer version already landed in raw.
+      AND NOT EXISTS (
+        SELECT 1
+        FROM raw AS newer
+        WHERE newer.CODE = raw.CODE
+          AND (
+            newer.LASTUPDATEDATE > raw.LASTUPDATEDATE
+            OR (newer.LASTUPDATEDATE = raw.LASTUPDATEDATE
+                AND newer.INGESTION_TIMESTAMP > raw.INGESTION_TIMESTAMP)
+          )
+      )
+  )
+  WHERE row_num = 1
+) AS source
+ON target.CODE = source.CODE
+WHEN MATCHED AND source.LASTUPDATEDATE >= target.LASTUPDATEDATE
+  AND (
+    source.STATUS IS DISTINCT FROM target.STATUS
+    OR source.AMOUNT IS DISTINCT FROM target.AMOUNT
+    OR source.ACCEPTDATE IS DISTINCT FROM target.ACCEPTDATE
+    OR source.LASTUPDATEDATE IS DISTINCT FROM target.LASTUPDATEDATE
+  ) THEN UPDATE SET
+  STATUS = source.STATUS,
+  AMOUNT = source.AMOUNT,
+  ACCEPTDATE = source.ACCEPTDATE,
+  LASTUPDATEDATE = source.LASTUPDATEDATE,
+  DWH_UPDATE_TIME = CURRENT_TIMESTAMP()
+WHEN NOT MATCHED THEN INSERT (
+  CODE,
+  PLAYERCODE,
+  REQUESTDATE,
+  ACCEPTDATE,
+  AMOUNT,
+  TYPE,
+  STATUS,
+  PAYMENTMETHOD,
+  PAYMENTSUBMETHOD,
+  COUNTRY,
+  CLIENTPARAMETERCODE,
+  FIRSTDEPOSIT,
+  LASTUPDATEDATE,
+  DWH_CREATE_TIME,
+  DWH_UPDATE_TIME
+) VALUES (
+  source.CODE,
+  source.PLAYERCODE,
+  source.REQUESTDATE,
+  source.ACCEPTDATE,
+  source.AMOUNT,
+  source.TYPE,
+  source.STATUS,
+  source.PAYMENTMETHOD,
+  source.PAYMENTSUBMETHOD,
+  source.COUNTRY,
+  source.CLIENTPARAMETERCODE,
+  source.FIRSTDEPOSIT,
+  source.LASTUPDATEDATE,
+  CURRENT_TIMESTAMP(),
+  CURRENT_TIMESTAMP()
+); -- at [295:1]
+Number of affected rows: 0
+
+ASSERT (SELECT TO_JSON_STRING(c) = TO_JSON_STRING(b) FROM curated c CROSS JOIN after_update b)
+  AS 'Older ingestion replay cannot undo the newer version'; -- at [382:1]
+Assertion successful
+INSERT INTO raw SELECT * REPLACE (
+  TIMESTAMP '2026-05-18 18:10:00+00' AS INGESTION_TIMESTAMP
+) FROM raw WHERE STATUS = 'waiting'; -- at [385:1]
+Number of affected rows: 1
+
+MERGE curated AS target
+USING (
+  SELECT
+    CODE,
+    PLAYERCODE,
+    REQUESTDATE,
+    ACCEPTDATE,
+    AMOUNT,
+    TYPE,
+    STATUS,
+    PAYMENTMETHOD,
+    PAYMENTSUBMETHOD,
+    COUNTRY,
+    CLIENTPARAMETERCODE,
+    FIRSTDEPOSIT,
+    LASTUPDATEDATE
+  FROM (
+    SELECT
+      raw.*,
+      ROW_NUMBER() OVER (
+        PARTITION BY CODE
+        ORDER BY LASTUPDATEDATE DESC, INGESTION_TIMESTAMP DESC
+      ) AS row_num
+    FROM raw AS raw
+    WHERE raw.INGESTION_TIMESTAMP >= interval_start
+      AND raw.INGESTION_TIMESTAMP < interval_end
+      -- An older replay must not undo a newer version already landed in raw.
+      AND NOT EXISTS (
+        SELECT 1
+        FROM raw AS newer
+        WHERE newer.CODE = raw.CODE
+          AND (
+            newer.LASTUPDATEDATE > raw.LASTUPDATEDATE
+            OR (newer.LASTUPDATEDATE = raw.LASTUPDATEDATE
+                AND newer.INGESTION_TIMESTAMP > raw.INGESTION_TIMESTAMP)
+          )
+      )
+  )
+  WHERE row_num = 1
+) AS source
+ON target.CODE = source.CODE
+WHEN MATCHED AND source.LASTUPDATEDATE >= target.LASTUPDATEDATE
+  AND (
+    source.STATUS IS DISTINCT FROM target.STATUS
+    OR source.AMOUNT IS DISTINCT FROM target.AMOUNT
+    OR source.ACCEPTDATE IS DISTINCT FROM target.ACCEPTDATE
+    OR source.LASTUPDATEDATE IS DISTINCT FROM target.LASTUPDATEDATE
+  ) THEN UPDATE SET
+  STATUS = source.STATUS,
+  AMOUNT = source.AMOUNT,
+  ACCEPTDATE = source.ACCEPTDATE,
+  LASTUPDATEDATE = source.LASTUPDATEDATE,
+  DWH_UPDATE_TIME = CURRENT_TIMESTAMP()
+WHEN NOT MATCHED THEN INSERT (
+  CODE,
+  PLAYERCODE,
+  REQUESTDATE,
+  ACCEPTDATE,
+  AMOUNT,
+  TYPE,
+  STATUS,
+  PAYMENTMETHOD,
+  PAYMENTSUBMETHOD,
+  COUNTRY,
+  CLIENTPARAMETERCODE,
+  FIRSTDEPOSIT,
+  LASTUPDATEDATE,
+  DWH_CREATE_TIME,
+  DWH_UPDATE_TIME
+) VALUES (
+  source.CODE,
+  source.PLAYERCODE,
+  source.REQUESTDATE,
+  source.ACCEPTDATE,
+  source.AMOUNT,
+  source.TYPE,
+  source.STATUS,
+  source.PAYMENTMETHOD,
+  source.PAYMENTSUBMETHOD,
+  source.COUNTRY,
+  source.CLIENTPARAMETERCODE,
+  source.FIRSTDEPOSIT,
+  source.LASTUPDATEDATE,
+  CURRENT_TIMESTAMP(),
+  CURRENT_TIMESTAMP()
+); -- at [390:1]
+Number of affected rows: 0
+
+ASSERT (SELECT TO_JSON_STRING(c) = TO_JSON_STRING(b) FROM curated c CROSS JOIN after_update b)
+  AS 'Late delivery of an older source version cannot regress the target'; -- at [477:1]
+Assertion successful
+SELECT 'passed' AS incremental_merge_checks; -- at [479:1]
++--------------------------+
+| incremental_merge_checks |
++--------------------------+
+| passed                   |
++--------------------------+

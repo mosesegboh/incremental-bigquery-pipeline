@@ -1,0 +1,6 @@
+         tableId           Type    Labels          Time Partitioning                     Clustered Fields             
+ ------------------------ ------- -------- ---------------------------------- --------------------------------------- 
+  _pipeline_batches        TABLE                                                                                      
+  clientparameters         TABLE                                                                                      
+  playertransactions       TABLE            DAY (field: REQUESTDATE)           CODE, PLAYERCODE, CLIENTPARAMETERCODE  
+  playertransactions_raw   TABLE            DAY (field: INGESTION_TIMESTAMP)   CODE, PLAYERCODE, CLIENTPARAMETERCODE  

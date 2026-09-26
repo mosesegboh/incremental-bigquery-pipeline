@@ -1,0 +1,16 @@
+gs://de-test-project-moses-de-test-bucket/_batches/0e2d23d284bf3bbad0d3ffa39c5cf27cb38031b4809d30bdf3a679c8879d2059/playertransactions_2026_03.parquet
+gs://de-test-project-moses-de-test-bucket/_batches/a77ef1242f4f25e6443fbc762d44447e3308985a4f4e2ae8721d54eae0f2b02d/clientparameters.parquet
+gs://de-test-project-moses-de-test-bucket/_batches/cb9a213f1edc3719e0d21d746308e1c9e9ccfd2172f9f42c9ddaf9b5494ab2a7/playertransactions_2026_04.parquet
+gs://de-test-project-moses-de-test-bucket/bronze/clientparameters/clientparameters.parquet
+gs://de-test-project-moses-de-test-bucket/bronze/playertransactions/playertransactions_2026_03.parquet
+gs://de-test-project-moses-de-test-bucket/bronze/playertransactions/playertransactions_2026_04.parquet
+gs://de-test-project-moses-de-test-bucket/clientparameters/clientparameters.parquet
+gs://de-test-project-moses-de-test-bucket/gold/clientparameters/clientparameters.parquet
+gs://de-test-project-moses-de-test-bucket/gold/clientparameters/dim_clientparameters.parquet
+gs://de-test-project-moses-de-test-bucket/gold/playertransactions/fact_playertransactions.parquet
+gs://de-test-project-moses-de-test-bucket/gold/playertransactions/playertransactions.parquet
+gs://de-test-project-moses-de-test-bucket/playertransactions/playertransactions_2026_03.parquet
+gs://de-test-project-moses-de-test-bucket/playertransactions/playertransactions_2026_04.parquet
+gs://de-test-project-moses-de-test-bucket/silver/clientparameters/clientparameters.parquet
+gs://de-test-project-moses-de-test-bucket/silver/playertransactions/playertransactions_2026_03.parquet
+gs://de-test-project-moses-de-test-bucket/silver/playertransactions/playertransactions_2026_04.parquet

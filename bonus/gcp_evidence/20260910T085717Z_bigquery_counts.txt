@@ -1,0 +1,7 @@
++------------------------+-----------+
+|       table_name       | row_count |
++------------------------+-----------+
+| clientparameters       |        41 |
+| playertransactions_raw |     19842 |
+| playertransactions     |     19161 |
++------------------------+-----------+
