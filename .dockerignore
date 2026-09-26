@@ -1,0 +1,15 @@
+.git
+.idea
+.venv
+.env
+.env.*
+.pytest_cache
+__pycache__
+*.py[cod]
+main/processing
+
+application_default_credentials.json
+service-account*.json
+*credentials*.json
+*secret*.json
+test-results
