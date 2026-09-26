@@ -1,0 +1,93 @@
+name: Pipeline CI
+
+on:
+  push:
+    branches: [master, develop, 'feat/**']
+  pull_request:
+    branches: [master, develop]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    name: Python ${{ matrix.python }} checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ['3.10', '3.12']
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: ${{ matrix.python }}
+          cache: pip
+      - name: Install dependencies
+        run: python -m pip install -r requirements.txt
+      - name: Check Python and shell syntax
+        run: make lint PYTHON=python
+      - name: Run regression tests
+        run: python -m pytest -q --junitxml=test-results/pytest.xml
+      - name: Exercise the CLI and incremental rerun
+        run: make smoke PYTHON=python
+      - name: Retain test results
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: test-results-${{ matrix.python }}
+          path: test-results/
+          if-no-files-found: warn
+          retention-days: 14
+
+  container:
+    name: Container checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - name: Validate Compose configuration
+        run: docker compose config --quiet
+      - name: Build container
+        run: docker build --tag pipeline:test .
+      - name: Run tests and CLI smoke inside container
+        run: docker run --rm pipeline:test make check PYTHON=python
+
+  publish:
+    name: Publish validated release image
+    needs: [checks, container]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - name: Build and validate the release image
+        env:
+          IMAGE: ghcr.io/${{ github.repository }}
+        run: |
+          image="${IMAGE,,}"
+          docker build --label "org.opencontainers.image.source=https://github.com/${GITHUB_REPOSITORY}" --tag "$image:$GITHUB_SHA" .
+          docker run --rm "$image:$GITHUB_SHA" make check PYTHON=python
+      - name: Publish immutable commit tag
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          IMAGE: ghcr.io/${{ github.repository }}
+        run: |
+          image="${IMAGE,,}"
+          printf '%s' "$GHCR_TOKEN" | docker login ghcr.io --username "$GITHUB_ACTOR" --password-stdin
+          docker push "$image:$GITHUB_SHA"
