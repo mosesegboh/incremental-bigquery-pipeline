@@ -20,3 +20,14 @@ reset-local:
 
 gcp-test:
 	PYTHON=$(PYTHON) bash scripts/gcp_bigquery_test.sh all
+
+.PHONY: lint smoke check
+
+lint:
+	$(PYTHON) -m compileall -q main scripts bonus/airflow bonus/pyspark tests
+	bash -n scripts/gcp_bigquery_test.sh
+
+smoke:
+	$(PYTHON) scripts/ci_smoke.py
+
+check: lint test smoke

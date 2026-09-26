@@ -319,3 +319,12 @@ ls main/processing/dev/reports
 7. For BigQuery, run the DDL, load the Parquet files, run the merge with an interval covering the source `INGESTION_TIMESTAMP`, then run the analytics SQL.
 
 For a detailed review/test walkthrough with file references and screenshot queries, see [the incremental pipeline guide](bonus/incremental_pipeline_review.md).
+
+## CI/CD And Feature Branches
+
+Run `make check` for syntax checks, regression tests, and an isolated CLI smoke
+run that verifies incremental rerun behavior. GitHub Actions also validates Python
+3.10/3.12 and the Docker image on feature branches, develop, master and pull requests.
+After a validated master push, it publishes a commit-tagged image to GHCR.
+See [CI/CD and release instructions](docs/ci-cd.md) for checks, branch promotion,
+required-check configuration, and the boundary between image delivery and deployment.
