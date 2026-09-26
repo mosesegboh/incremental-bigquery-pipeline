@@ -1,0 +1,13 @@
+gs://de-test-project-moses-de-test-bucket/bronze/clientparameters/clientparameters.parquet
+gs://de-test-project-moses-de-test-bucket/bronze/playertransactions/playertransactions_2026_03.parquet
+gs://de-test-project-moses-de-test-bucket/bronze/playertransactions/playertransactions_2026_04.parquet
+gs://de-test-project-moses-de-test-bucket/clientparameters/clientparameters.parquet
+gs://de-test-project-moses-de-test-bucket/gold/clientparameters/clientparameters.parquet
+gs://de-test-project-moses-de-test-bucket/gold/clientparameters/dim_clientparameters.parquet
+gs://de-test-project-moses-de-test-bucket/gold/playertransactions/fact_playertransactions.parquet
+gs://de-test-project-moses-de-test-bucket/gold/playertransactions/playertransactions.parquet
+gs://de-test-project-moses-de-test-bucket/playertransactions/playertransactions_2026_03.parquet
+gs://de-test-project-moses-de-test-bucket/playertransactions/playertransactions_2026_04.parquet
+gs://de-test-project-moses-de-test-bucket/silver/clientparameters/clientparameters.parquet
+gs://de-test-project-moses-de-test-bucket/silver/playertransactions/playertransactions_2026_03.parquet
+gs://de-test-project-moses-de-test-bucket/silver/playertransactions/playertransactions_2026_04.parquet
